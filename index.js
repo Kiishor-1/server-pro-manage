@@ -10,6 +10,7 @@ const { port } = require('./config/appConfig');
 
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const userRoutes = require('./routes/userRoutes')
 const PORT = port;
 const FRONT_END = process.env.FRONT_END;
 
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/tasks", taskRoutes);
+app.use('/api/v1/users', userRoutes);
 
 app.all("*", (req, res, next) => {
     const error = new Error("No such routes available");
