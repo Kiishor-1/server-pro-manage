@@ -10,15 +10,16 @@ const { port } = require('./config/appConfig');
 
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const PORT = port;
+const FRONT_END = process.env.FRONT_END;
 
 app.use(express.json());
 app.use(cors({
-    origin: '*',
+    origin: FRONT_END,
     methods: 'GET,POST,PUT,DELETE,PATCH',
     allowedHeaders: 'Content-Type,Authorization'
 }));
 
-const PORT = port;
 
 app.get("/", (req, res) => {
     res.send("Standard root");
