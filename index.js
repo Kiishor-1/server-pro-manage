@@ -16,10 +16,12 @@ const FRONT_END = process.env.FRONT_END;
 
 app.use(express.json());
 app.use(cors({
-    origin: FRONT_END,
-    methods: 'GET,POST,PUT,DELETE,PATCH',
-    allowedHeaders: 'Content-Type,Authorization'
+    origin: FRONT_END, 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
 }));
+
 
 
 app.get("/", (req, res) => {
