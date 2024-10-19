@@ -10,16 +10,18 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique:true,
+        unique: true,
     },
     password: {
         type: String,
         required: true,
     },
-    tasks: {
-        type: Schema.Types.ObjectId,
-        ref: "Task",
-    }
+    tasks: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Task",
+        }
+    ]
 })
 
 userSchema.post("findOneAndDelete", async (user) => {

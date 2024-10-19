@@ -11,6 +11,12 @@ const taskSchema = new mongoose.Schema({
         required: true,
         enum: ['HIGH-PRIORITY', 'MODERATE-PRIORITY', 'LOW-PRIORITY'],
     },
+    category:{
+        type:String,
+        required:true,
+        enum:['Backlog','ToDo','InProgress','Done'],
+        default:'ToDo',
+    },
     checkLists: [
         {
             type: String,

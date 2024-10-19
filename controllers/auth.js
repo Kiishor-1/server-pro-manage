@@ -65,7 +65,7 @@ exports.login = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: `User is not found. Please signup to continue`,
+                message: `User is not found. Please signup`,
             })
         }
 

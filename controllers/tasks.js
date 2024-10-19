@@ -64,16 +64,60 @@ exports.getTask = async (req, res) => {
 
 
 // Create Task
+// exports.createTask = async (req, res) => {
+//     try {
+//         const { title, priority,category, checkLists, assigneesEmails } = req.body;
+//         const currentUserId = req.user._id;
+
+//         const task = new Task({
+//             title,
+//             priority,
+//             category,
+//             checkLists,
+//             assignees: [currentUserId],
+//         });
+
+//         if (assigneesEmails && assigneesEmails.length > 0) {
+//             const assignees = await User.find({ email: { $in: assigneesEmails } });
+//             task.assignees = [...new Set([...task.assignees, ...assignees.map(user => user._id)])];
+//         }
+
+//         await task.save();
+
+//         // Add task to users' tasks array
+//         task.assignees.forEach(async userId => await addTaskToUser(userId, task._id));
+
+//         return res.status(201).json({
+//             success: true,
+//             task,
+//             message: "Task created successfully"
+//         });
+//     } catch (error) {
+//         return res.status(500).json({
+//             success: false,
+//             message: "Task creation failed",
+//         });
+//     }
+// };
+
+
+// Create Task
 exports.createTask = async (req, res) => {
     try {
-        const { title, priority, checkLists, assigneesEmails } = req.body;
+        const { title, priority, checkLists, assigneesEmails, date } = req.body;
+        console.log('body',req.body);
         const currentUserId = req.user._id;
+
+        // Ensure date is properly handled as a Date object
+        const taskDueDate = date ? new Date(date) : null;
 
         const task = new Task({
             title,
             priority,
+            category:'ToDo',
             checkLists,
             assignees: [currentUserId],
+            createdAt: taskDueDate || Date.now()  // Use the provided date or current time
         });
 
         if (assigneesEmails && assigneesEmails.length > 0) {
@@ -98,6 +142,7 @@ exports.createTask = async (req, res) => {
         });
     }
 };
+
 
 exports.updateTask = async (req, res) => {
     try {
@@ -149,15 +194,17 @@ exports.updateTask = async (req, res) => {
 exports.destroyTask = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log('check1')
         const task = await Task.findById(id);
         if (!task) {
             return res.status(404).json({ success: false, message: 'Task not found' });
         }
+        console.log('check2')
 
         task.assignees.forEach(async userId => await removeTaskFromUser(userId, task._id));
-
-        await task.remove();
-
+        console.log('check3')
+        await Task.findOneAndDelete(id);
+        console.log('check4')
         return res.status(200).json({
             success: true,
             message: "Task deleted successfully"
