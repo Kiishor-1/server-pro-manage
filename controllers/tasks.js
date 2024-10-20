@@ -1,48 +1,190 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
+const moment = require('moment');
 
-// add task to user and avoid duplicate entries
-const addTaskToUser = async (userId, taskId) => {
-    const user = await User.findById(userId);
-    if (user && !user.tasks.includes(taskId)) {
-        user.tasks.push(taskId);
-        await user.save();
-    }
-};
-
-// remove task from user's tasks array
-const removeTaskFromUser = async (userId, taskId) => {
-    const user = await User.findById(userId);
-    if (user && user.tasks.includes(taskId)) {
-        user.tasks = user.tasks.filter(task => task.toString() !== taskId.toString());
-        await user.save();
-    }
-};
-
-
-
-// Get all the task a user have access
 exports.getAllTasks = async (req, res) => {
     try {
-        const userId = req.user._id
-        const tasks = await Task.find({ assignees: userId });
+        const userId = req.user._id;
+        const { filter } = req.query;
+
+        let dateFilter = {};
+
+        if (filter === 'today') {
+            const today = moment().startOf('day');
+            const tomorrow = moment(today).endOf('day');
+            dateFilter.dueDate = { $gte: today.toDate(), $lte: tomorrow.toDate() };
+        } else if (filter === 'week') {
+            const startOfWeek = moment().startOf('week');
+            const endOfWeek = moment().endOf('week');
+            dateFilter.dueDate = { $gte: startOfWeek.toDate(), $lte: endOfWeek.toDate() };
+        } else if (filter === 'month') {
+            const startOfMonth = moment().startOf('month');
+            const endOfMonth = moment().endOf('month');
+            dateFilter.dueDate = { $gte: startOfMonth.toDate(), $lte: endOfMonth.toDate() };
+        }
+
+        const tasks = await Task.find({
+            $or: [
+                { author: userId },
+                { assignee: userId },
+                { haveAccess: userId }
+            ],
+            ...dateFilter
+        }).populate('assignee');
+
         return res.status(200).json({
             success: true,
-            tasks,
+            tasks
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Failed to retrieve tasks",
+            message: 'Failed to retrieve tasks'
         });
     }
 };
 
-// get task details
-exports.getTask = async (req, res) => {
+
+
+exports.getTaskDetail = async (req, res) => {
     try {
         const { id } = req.params;
-        const task = await Task.findById(id).populate('assignees');
+        const userId = req.user._id;
+
+        const task = await Task.findOne({
+            _id: id,
+            $or: [
+                { author: userId },
+                { assignee: userId },
+                { haveAccess: userId }
+            ]
+        });
+
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found or access denied'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            task
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error retrieving task detail'
+        });
+    }
+};
+
+
+exports.createTask = async (req, res) => {
+    try {
+        const { title, priority, checkLists, date, assigneeEmail } = req.body;
+        const authorId = req.user._id;
+
+        const newTask = new Task({
+            title,
+            priority,
+            checkLists,
+            dueDate: date,
+            createdAt: new Date(),
+            author: authorId
+        });
+
+        if (assigneeEmail) {
+            const assignee = await User.findOne({ email: assigneeEmail });
+            if (!assignee) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Assignee not found'
+                });
+            }
+
+            newTask.assignee = assignee._id;
+        }
+
+        await newTask.save();
+
+        const currentUser = await User.findById(authorId);
+        currentUser.tasks.push(newTask._id);
+        await currentUser.save();
+
+        return res.status(201).json({
+            success: true,
+            message: 'Task created successfully',
+            task: newTask
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error creating task'
+        });
+    }
+};
+
+
+exports.updateTask = async (req, res) => {
+    console.log('object')
+    try {
+        const { id } = req.params;
+        console.log("id", id)
+        const { title, priority, checkLists, date, assignee } = req.body;
+        console.log('reqbody', req.body)
+        // Find the task to update
+        const task = await Task.findById(id);
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
+        }
+        console.log('2')
+        task.title = title;
+        task.priority = priority;
+        task.checkLists = checkLists;
+        task.dueDate = date;
+        console.log('2.1')
+        if (assignee) {
+            const newAssignee = await User.findOne({ email: assignee });
+            if (!newAssignee) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Assignee not found'
+                });
+            }
+            console.log('3')
+
+            if (task.assignee) {
+                const previousAssignee = await User.findById(task.assignee);
+                previousAssignee.tasks.pull(task._id);
+                await previousAssignee.save();
+            }
+            task.assignee = newAssignee._id;
+        }
+        await task.save();
+        console.log('4')
+        return res.status(200).json({
+            success: true,
+            message: 'Task updated successfully',
+            task
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error updating task'
+        });
+    }
+};
+
+
+exports.destroyTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const task = await Task.findById(id);
         if (!task) {
             return res.status(404).json({
                 success: false,
@@ -50,170 +192,62 @@ exports.getTask = async (req, res) => {
             });
         }
 
-        return res.status(200).json({
-            success: true,
-            task,
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to retrieve task",
-        });
-    }
-};
-
-
-// Create Task
-// exports.createTask = async (req, res) => {
-//     try {
-//         const { title, priority,category, checkLists, assigneesEmails } = req.body;
-//         const currentUserId = req.user._id;
-
-//         const task = new Task({
-//             title,
-//             priority,
-//             category,
-//             checkLists,
-//             assignees: [currentUserId],
-//         });
-
-//         if (assigneesEmails && assigneesEmails.length > 0) {
-//             const assignees = await User.find({ email: { $in: assigneesEmails } });
-//             task.assignees = [...new Set([...task.assignees, ...assignees.map(user => user._id)])];
-//         }
-
-//         await task.save();
-
-//         // Add task to users' tasks array
-//         task.assignees.forEach(async userId => await addTaskToUser(userId, task._id));
-
-//         return res.status(201).json({
-//             success: true,
-//             task,
-//             message: "Task created successfully"
-//         });
-//     } catch (error) {
-//         return res.status(500).json({
-//             success: false,
-//             message: "Task creation failed",
-//         });
-//     }
-// };
-
-
-// Create Task
-exports.createTask = async (req, res) => {
-    try {
-        const { title, priority, checkLists, assigneesEmails, date } = req.body;
-        console.log('body',req.body);
-        const currentUserId = req.user._id;
-
-        // Ensure date is properly handled as a Date object
-        const taskDueDate = date ? new Date(date) : null;
-
-        const task = new Task({
-            title,
-            priority,
-            category:'ToDo',
-            checkLists,
-            assignees: [currentUserId],
-            createdAt: taskDueDate || Date.now()  // Use the provided date or current time
-        });
-
-        if (assigneesEmails && assigneesEmails.length > 0) {
-            const assignees = await User.find({ email: { $in: assigneesEmails } });
-            task.assignees = [...new Set([...task.assignees, ...assignees.map(user => user._id)])];
-        }
-
-        await task.save();
-
-        // Add task to users' tasks array
-        task.assignees.forEach(async userId => await addTaskToUser(userId, task._id));
-
-        return res.status(201).json({
-            success: true,
-            task,
-            message: "Task created successfully"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Task creation failed",
-        });
-    }
-};
-
-
-exports.updateTask = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, priority, checkLists, assigneesEmails } = req.body;
-        const currentUserId = req.user._id;
-
-        const task = await Task.findById(id).populate('assignees');
-        if (!task) {
-            return res.status(404).json({ success: false, message: 'Task not found' });
-        }
-
-        const originalAssignees = task.assignees.map(assignee => assignee._id.toString());
-
-        task.title = title || task.title;
-        task.priority = priority || task.priority;
-        task.checkLists = checkLists || task.checkLists;
-
-        let updatedAssignees = [currentUserId];
-        if (assigneesEmails && assigneesEmails.length > 0) {
-            const newAssignees = await User.find({ email: { $in: assigneesEmails } });
-            updatedAssignees = [...new Set([...updatedAssignees, ...newAssignees.map(user => user._id)])];
-        }
-
-        task.assignees = updatedAssignees;
-
-        await task.save();
-
-        // Add task to new assignees and remove from previous assignees if needed
-        updatedAssignees.forEach(async userId => await addTaskToUser(userId, task._id));
-        const removedAssignees = originalAssignees.filter(id => !updatedAssignees.includes(id));
-        removedAssignees.forEach(async userId => await removeTaskFromUser(userId, task._id));
+        const author = await User.findById(task.author);
+        author.tasks.pull(task._id);
+        await author.save();
+        await task.remove();
 
         return res.status(200).json({
             success: true,
-            task,
-            message: "Task updated successfully"
+            message: 'Task deleted successfully'
         });
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: "Task update failed",
+            message: 'Error deleting task'
         });
     }
 };
 
 
-// Delete Task
-exports.destroyTask = async (req, res) => {
+exports.updateCategory = async (req, res) => {
+    const { id } = req.params;
+    const { category } = req.body;
+
+    const allowedCategories = ['Backlog', 'ToDo', 'InProgress', 'Done'];
+
     try {
-        const { id } = req.params;
-        console.log('check1')
+        if (!allowedCategories.includes(category)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid category'
+            });
+        }
         const task = await Task.findById(id);
         if (!task) {
-            return res.status(404).json({ success: false, message: 'Task not found' });
+            console.log('error itthe3')
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
         }
-        console.log('check2')
 
-        task.assignees.forEach(async userId => await removeTaskFromUser(userId, task._id));
-        console.log('check3')
-        await Task.findOneAndDelete(id);
-        console.log('check4')
+        task.category = category;
+        await task.save();
+
         return res.status(200).json({
             success: true,
-            message: "Task deleted successfully"
+            message: 'Category updated successfully',
+            task
         });
+
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Task deletion failed",
-        });
+        console.error(error);
+
+        if (error.kind === 'ObjectId') {
+            return res.status(400).json({ success: false, message: 'Invalid task ID' });
+        }
+        return res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
     }
-};
+}
 

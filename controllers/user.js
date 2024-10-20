@@ -6,50 +6,57 @@ exports.addPeople = async (req, res) => {
         const currentUserId = req.user._id;
         const { email } = req.body;
 
-        const currentUser = await User.findById(currentUserId).populate('tasks');
-        if (!currentUser) {
-            return res.status(404).json({
-                success: false,
-                message: 'Current user not found',
-            });
-        }
-
-        const newUser = await User.findOne({ email });
+        const newUser = await User.findOne({ email:email });
+        console.log(newUser);
         if (!newUser) {
             return res.status(404).json({
                 success: false,
-                message: 'User to add is not found',
+                message: 'User to add not found'
             });
         }
 
-        const tasks = currentUser.tasks;
+        const tasks = await Task.find({ author: currentUserId });
         if (!tasks || tasks.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: 'No tasks to grant access to',
+                message: 'No tasks to grant access to'
             });
         }
 
         for (let task of tasks) {
-            if (!task.assignees.includes(newUser._id)) {
-                task.assignees.push(newUser._id);
+            if (!task.haveAccess.includes(newUser._id)) {
+                task.haveAccess.push(newUser._id);
                 await task.save();
             }
         }
 
-        newUser.tasks = [...new Set([...newUser.tasks, ...tasks.map(task => task._id)])];
-        await newUser.save();
-
         return res.status(200).json({
             success: true,
-            message: `Access granted to ${newUser.email} for all tasks`,
-            tasks: newUser.tasks
+            message: `Access granted to ${newUser.email} for all tasks`
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Error granting task access',
+            message: 'Error granting task access'
         });
     }
 };
+
+
+
+exports.getAllUsers = async (req, res)=>{
+    try{
+        const users = await User.find({});
+        res.status(200).json({
+            success:true,
+            message:'Users data fetched successfully',
+            users
+        });
+    }catch(error){
+        console.log(error);
+        res.status(500).json({
+            success:false,
+            message:'Something went wrong',
+        })
+    }
+}

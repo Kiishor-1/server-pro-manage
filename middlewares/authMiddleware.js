@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const authMiddleware = async (req, res, next) => {
+    console.log(req.body)
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
         if (!token) {
@@ -10,10 +11,10 @@ const authMiddleware = async (req, res, next) => {
                 message: 'Unauthorized: No token provided'
             });
         }
-        console.log('Received token:', token);
+        // console.log('Received token:', token);
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('Decoded token:', decoded);
+        // console.log('Decoded token:', decoded);
 
         const user = await User.findById(decoded.id);
         if (!user) {

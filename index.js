@@ -8,13 +8,12 @@ const cors = require('cors');
 const connectDB = require('./config/dbConfig');
 const { port } = require('./config/appConfig');
 
+
+
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes')
-const PORT = port;
 const FRONT_END = process.env.FRONT_END;
-
-app.use(express.json());
 app.use(cors({
     origin: FRONT_END, 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -22,11 +21,21 @@ app.use(cors({
     credentials: true,
 }));
 
-
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
 
 app.get("/", (req, res) => {
     res.send("Standard root");
 })
+
+// app.use((req, res, next) => {
+//     console.log('Incoming request:', {
+//         method: req.method,
+//         url: req.url,
+//         body: req.body,
+//     });
+//     next();
+// });
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/tasks", taskRoutes);
@@ -46,8 +55,8 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is up at port ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server is up at port ${port}`);
     connectDB()
         .then(() => {
             console.log('Connected to Database');

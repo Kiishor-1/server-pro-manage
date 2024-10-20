@@ -11,11 +11,11 @@ const taskSchema = new mongoose.Schema({
         required: true,
         enum: ['HIGH-PRIORITY', 'MODERATE-PRIORITY', 'LOW-PRIORITY'],
     },
-    category:{
-        type:String,
-        required:true,
-        enum:['Backlog','ToDo','InProgress','Done'],
-        default:'ToDo',
+    category: {
+        type: String,
+        required: true,
+        enum: ['Backlog', 'ToDo', 'InProgress', 'Done'],
+        default: 'ToDo',
     },
     checkLists: [
         {
@@ -26,10 +26,22 @@ const taskSchema = new mongoose.Schema({
         type: Date,
         default: Date.now(),
     },
-    assignees: [
+    dueDate:{
+        type:Date,
+        default:Date.now(),
+    },
+    assignee: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+    },
+    author:{
+        type:Schema.Types.ObjectId,
+        ref:"User",
+    },
+    haveAccess:[
         {
-            type: Schema.Types.ObjectId,
-            ref: "User",
+            type:Schema.Types.ObjectId,
+            ref:"User",
         }
     ]
 });
