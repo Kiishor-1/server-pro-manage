@@ -15,7 +15,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes')
 const FRONT_END = process.env.FRONT_END;
 app.use(cors({
-    origin: FRONT_END, 
+    origin: '*', 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
