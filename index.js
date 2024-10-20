@@ -8,31 +8,44 @@ const cors = require('cors');
 const connectDB = require('./config/dbConfig');
 const { port } = require('./config/appConfig');
 
-
-
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
-const userRoutes = require('./routes/userRoutes')
+const userRoutes = require('./routes/userRoutes');
 const FRONT_END = process.env.FRONT_END;
-app.use(cors({
-    origin: '*', 
+
+
+const corsOptions = {
+    origin: FRONT_END,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-}));
+};
+
+
+app.use(cors(corsOptions));
+
+
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+});
+
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
-app.use(express.urlencoded({extended:true}))
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
     res.send("Standard root");
-})
+});
+
 
 // app.use((req, res, next) => {
 //     console.log('Incoming request:', {
 //         method: req.method,
 //         url: req.url,
-//         body: req.body,
+//         origin: req.headers.origin,
+//         headers: req.headers
 //     });
 //     next();
 // });
