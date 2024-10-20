@@ -49,16 +49,22 @@ exports.getAllTasks = async (req, res) => {
 exports.getTaskDetail = async (req, res) => {
     try {
         const { id } = req.params;
+
+        console.log('id', id)
         const userId = req.user._id;
 
-        const task = await Task.findOne({
-            _id: id,
-            $or: [
-                { author: userId },
-                { assignee: userId },
-                { haveAccess: userId }
-            ]
-        });
+        const task = await Task.findById(id);
+
+        console.log(task)
+
+        // const task = await Task.findOne({
+        //     _id: id,
+        //     $or: [
+        //         { author: userId },
+        //         { assignee: userId },
+        //         { haveAccess: userId }
+        //     ]
+        // });
 
         if (!task) {
             return res.status(404).json({
@@ -69,9 +75,11 @@ exports.getTaskDetail = async (req, res) => {
 
         return res.status(200).json({
             success: true,
+            message: 'Task fetched successfully',
             task
         });
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             success: false,
             message: 'Error retrieving task detail'
@@ -133,7 +141,7 @@ exports.updateTask = async (req, res) => {
         console.log("id", id)
         const { title, priority, checkLists, date, assignee } = req.body;
         console.log('reqbody', req.body)
-        // Find the task to update
+
         const task = await Task.findById(id);
         if (!task) {
             return res.status(404).json({
@@ -251,3 +259,101 @@ exports.updateCategory = async (req, res) => {
     }
 }
 
+exports.analytics = async (req, res) => {
+    console.log('received');
+    const currentUserId = req.user._id;
+    if (!currentUserId) {
+        return res.status(403).json({
+            success: false,
+            error: 'Unauthorized'
+        });
+    }
+
+    try {
+        const analytics = {};
+
+        analytics.backlogTasks = await Task.countDocuments({
+            category: 'Backlog',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.toDoTasks = await Task.countDocuments({
+            category: 'ToDo',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.inProgressTasks = await Task.countDocuments({
+            category: 'InProgress',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.completedTasks = await Task.countDocuments({
+            category: 'Done',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.lowPriorityTasks = await Task.countDocuments({
+            priority: 'LOW-PRIORITY',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.moderatePriorityTasks = await Task.countDocuments({
+            priority: 'MODERATE-PRIORITY',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.highPriorityTasks = await Task.countDocuments({
+            priority: 'HIGH-PRIORITY',
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        analytics.dueDateTasks = await Task.countDocuments({
+            dueDate: { $exists: true }, 
+            $or: [
+                { author: currentUserId },
+                { assignee: currentUserId },
+                { haveAccess: currentUserId }
+            ]
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Tasks analysis done',
+            analytics
+        });
+    } catch (error) {
+        console.error(error); 
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch task analytics'
+        });
+    }
+}
