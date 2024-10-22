@@ -4,8 +4,13 @@ const moment = require('moment');
 
 exports.getAllTasks = async (req, res) => {
     try {
+
+        console.log('received request')
+
         const userId = req.user._id;
         const { filter } = req.query;
+
+        console.log('req.query',filter)
 
         let dateFilter = {};
 
@@ -97,10 +102,13 @@ exports.createTask = async (req, res) => {
             title,
             priority,
             checkLists,
-            dueDate: date,
             createdAt: new Date(),
             author: authorId
         });
+
+        if (date) {
+            newTask.dueDate = date;
+        }
 
         if (assigneeEmail) {
             const assignee = await User.findOne({ email: assigneeEmail });
@@ -126,6 +134,7 @@ exports.createTask = async (req, res) => {
             task: newTask
         });
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             success: false,
             message: 'Error creating task'
@@ -199,12 +208,16 @@ exports.destroyTask = async (req, res) => {
                 message: 'Task not found'
             });
         }
-
+        console.log('check')
         const author = await User.findById(task.author);
         author.tasks.pull(task._id);
+        console.log('check')
         await author.save();
-        await task.remove();
+        console.log('check')
+        // await task.remove();
+        await Task.findByIdAndDelete(id);
 
+        console.log('check')
         return res.status(200).json({
             success: true,
             message: 'Task deleted successfully'
@@ -222,6 +235,8 @@ exports.updateCategory = async (req, res) => {
     const { id } = req.params;
     const { category } = req.body;
 
+    console.log("check0")
+
     const allowedCategories = ['Backlog', 'ToDo', 'InProgress', 'Done'];
 
     try {
@@ -231,6 +246,7 @@ exports.updateCategory = async (req, res) => {
                 message: 'Invalid category'
             });
         }
+        console.log("check1")
         const task = await Task.findById(id);
         if (!task) {
             console.log('error itthe3')
@@ -239,10 +255,10 @@ exports.updateCategory = async (req, res) => {
                 message: 'Task not found'
             });
         }
-
+        console.log("check2")
         task.category = category;
         await task.save();
-
+        console.log("check3")
         return res.status(200).json({
             success: true,
             message: 'Category updated successfully',

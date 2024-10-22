@@ -19,29 +19,37 @@ const taskSchema = new mongoose.Schema({
     },
     checkLists: [
         {
-            type: String,
+            _id:false,
+            tag: {
+                type: String,
+                required: true,
+            },
+            isDone: {
+                type: Boolean,
+                default: false,
+            },
         }
     ],
     createdAt: {
         type: Date,
         default: Date.now(),
     },
-    dueDate:{
-        type:Date,
-        default:Date.now(),
+    dueDate: {
+        type: Date,
+        // default: Date.now(),
     },
     assignee: {
         type: Schema.Types.ObjectId,
         ref: "User",
     },
-    author:{
-        type:Schema.Types.ObjectId,
-        ref:"User",
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
     },
-    haveAccess:[
+    haveAccess: [
         {
-            type:Schema.Types.ObjectId,
-            ref:"User",
+            type: Schema.Types.ObjectId,
+            ref: "User",
         }
     ]
 });
