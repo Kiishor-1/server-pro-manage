@@ -9,14 +9,14 @@ exports.register = async (req, res) => {
         if (!name || !email || !password || !confirmPassword) {
             return res.status(403).send({
                 success: false,
-                message: "All Fields are required",
+                error: "All Fields are required",
             });
         }
 
         if (password !== confirmPassword) {
             return res.status(403).send({
                 success: false,
-                message: "Passwords do not match",
+                error: "Passwords do not match",
             });
         }
 
@@ -24,7 +24,7 @@ exports.register = async (req, res) => {
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "User Already Exists, Please login to continue",
+                error: "User Already Exists, Please login to continue",
             });
         }
         const hashedPassword = await bcrypt.hash(password, 16);
@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
         console.error(error);
         return res.status(500).json({
             success: false,
-            message: "User cannot be registered. Please try again.",
+            error: "User cannot be registered. Please try again.",
         });
     }
 };
@@ -56,7 +56,7 @@ exports.login = async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: `Please Fill up All the Required Fields`,
+                error: `Please Fill up All the Required Fields`,
             })
         }
 
@@ -65,7 +65,7 @@ exports.login = async (req, res) => {
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: `User is not found. Please signup`,
+                error: `User is not found. Please signup`,
             })
         }
 
@@ -91,14 +91,14 @@ exports.login = async (req, res) => {
         } else {
             return res.status(401).json({
                 success: false,
-                message: `Password is incorrect`,
+                error: `Password is incorrect`,
             })
         }
     } catch (error) {
         console.error(error)
         return res.status(500).json({
             success: false,
-            message: `Login Failure Please Try Again`,
+            error: `Login Failure Please Try Again`,
         })
     }
 }

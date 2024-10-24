@@ -12,7 +12,7 @@ exports.addPeople = async (req, res) => {
         if (!newUser) {
             return res.status(404).json({
                 success: false,
-                message: 'User to add not found'
+                error: 'User to add not found'
             });
         }
 
@@ -20,7 +20,7 @@ exports.addPeople = async (req, res) => {
         if (!tasks || tasks.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: 'No tasks to grant access to'
+                error: 'No tasks to grant access to'
             });
         }
 
@@ -38,7 +38,7 @@ exports.addPeople = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Error granting task access'
+            error: 'Error granting task access'
         });
     }
 };
@@ -57,7 +57,7 @@ exports.getAllUsers = async (req, res) => {
         console.log(error);
         res.status(500).json({
             success: false,
-            message: 'Something went wrong',
+            error: 'Something went wrong',
         })
     }
 }

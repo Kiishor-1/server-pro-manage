@@ -10,7 +10,7 @@ exports.getAllTasks = async (req, res) => {
         const userId = req.user._id;
         const { filter } = req.query;
 
-        console.log('req.query',filter)
+        console.log('req.query', filter)
 
         let dateFilter = {};
 
@@ -35,7 +35,10 @@ exports.getAllTasks = async (req, res) => {
                 { haveAccess: userId }
             ],
             ...dateFilter
-        }).populate('assignee');
+        }).populate({
+            path: 'assignee',
+            select: '-password'
+        });
 
         return res.status(200).json({
             success: true,
@@ -44,7 +47,7 @@ exports.getAllTasks = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Failed to retrieve tasks'
+            error: 'Failed to retrieve tasks'
         });
     }
 };
@@ -58,7 +61,10 @@ exports.getTaskDetail = async (req, res) => {
         console.log('id', id)
         const userId = req.user._id;
 
-        const task = await Task.findById(id);
+        const task = await Task.findById(id).populate({
+            path: 'assignee',
+            select: '-password'
+        });
 
         console.log(task)
 
@@ -74,7 +80,7 @@ exports.getTaskDetail = async (req, res) => {
         if (!task) {
             return res.status(404).json({
                 success: false,
-                message: 'Task not found or access denied'
+                error: 'Task not found or access denied'
             });
         }
 
@@ -87,7 +93,7 @@ exports.getTaskDetail = async (req, res) => {
         console.log(error)
         return res.status(500).json({
             success: false,
-            message: 'Error retrieving task detail'
+            error: 'Error retrieving task detail'
         });
     }
 };
@@ -95,7 +101,7 @@ exports.getTaskDetail = async (req, res) => {
 
 exports.createTask = async (req, res) => {
     try {
-        const { title, priority, checkLists, date, assigneeEmail } = req.body;
+        const { title, priority, checkLists, date, assignee: assigneeEmail } = req.body;
         const authorId = req.user._id;
 
         const newTask = new Task({
@@ -115,7 +121,7 @@ exports.createTask = async (req, res) => {
             if (!assignee) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Assignee not found'
+                    error: 'Assignee not found'
                 });
             }
 
@@ -137,7 +143,7 @@ exports.createTask = async (req, res) => {
         console.log(error)
         return res.status(500).json({
             success: false,
-            message: 'Error creating task'
+            error: 'Error creating task'
         });
     }
 };
@@ -155,7 +161,7 @@ exports.updateTask = async (req, res) => {
         if (!task) {
             return res.status(404).json({
                 success: false,
-                message: 'Task not found'
+                error: 'Task not found'
             });
         }
         console.log('2')
@@ -169,7 +175,7 @@ exports.updateTask = async (req, res) => {
             if (!newAssignee) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Assignee not found'
+                    error: 'Assignee not found'
                 });
             }
             console.log('3')
@@ -191,7 +197,7 @@ exports.updateTask = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Error updating task'
+            error: 'Error updating task'
         });
     }
 };
@@ -205,7 +211,7 @@ exports.destroyTask = async (req, res) => {
         if (!task) {
             return res.status(404).json({
                 success: false,
-                message: 'Task not found'
+                error: 'Task not found'
             });
         }
         console.log('check')
@@ -225,7 +231,7 @@ exports.destroyTask = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Error deleting task'
+            error: 'Error deleting task'
         });
     }
 };
@@ -243,7 +249,7 @@ exports.updateCategory = async (req, res) => {
         if (!allowedCategories.includes(category)) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid category'
+                error: 'Invalid category'
             });
         }
         console.log("check1")
@@ -252,7 +258,7 @@ exports.updateCategory = async (req, res) => {
             console.log('error itthe3')
             return res.status(404).json({
                 success: false,
-                message: 'Task not found'
+                error: 'Task not found'
             });
         }
         console.log("check2")
@@ -269,9 +275,9 @@ exports.updateCategory = async (req, res) => {
         console.error(error);
 
         if (error.kind === 'ObjectId') {
-            return res.status(400).json({ success: false, message: 'Invalid task ID' });
+            return res.status(400).json({ success: false, error: 'Invalid task ID' });
         }
-        return res.status(500).json({ success: false, message: 'Server error. Please try again later.' });
+        return res.status(500).json({ success: false, error: 'Server error. Please try again later.' });
     }
 }
 
@@ -352,7 +358,7 @@ exports.analytics = async (req, res) => {
         });
 
         analytics.dueDateTasks = await Task.countDocuments({
-            dueDate: { $exists: true }, 
+            dueDate: { $exists: true },
             $or: [
                 { author: currentUserId },
                 { assignee: currentUserId },
@@ -366,7 +372,7 @@ exports.analytics = async (req, res) => {
             analytics
         });
     } catch (error) {
-        console.error(error); 
+        console.error(error);
         res.status(500).json({
             success: false,
             error: 'Failed to fetch task analytics'

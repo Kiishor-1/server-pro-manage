@@ -10,7 +10,7 @@ module.exports.isAuthor = async (req, res, next) => {
             console.log('error itthe')
             return res.status(401).json({
                 success: false,
-                message: 'Unauthorized: User not authenticated',
+                error: 'Unauthorized: User not authenticated',
             });
         }
         const task = await Task.findById(id);
@@ -19,7 +19,7 @@ module.exports.isAuthor = async (req, res, next) => {
             console.log('error itthe')
             return res.status(404).json({
                 success: false,
-                message: 'Task not found',
+                error: 'Task not found',
             });
         }
 
@@ -30,7 +30,7 @@ module.exports.isAuthor = async (req, res, next) => {
         if (!isAuthor && !isAssignee && !hasAccess) {
             return res.status(403).json({
                 success: false,
-                message: 'Unauthorized: You do not have access to this task',
+                error: 'Unauthorized: You do not have access to this task',
             });
         }
 
@@ -38,7 +38,7 @@ module.exports.isAuthor = async (req, res, next) => {
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'Something went wrong',
+            error: 'Something went wrong',
         });
     }
 };
