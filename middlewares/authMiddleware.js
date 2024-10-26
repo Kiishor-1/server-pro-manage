@@ -3,19 +3,36 @@ const User = require('../models/User');
 
 const authMiddleware = async (req, res, next) => {
     console.log(req.body);
-    try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) {
-            return res.status(401).json({
-                success: false,
-                error: 'Unauthorized: No token provided'
-            });
-        }
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            error: 'Unauthorized: No token provided'
+        });
+    }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id);
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        if (res.headersSent) return;
         
+        console.error('JWT error:', error.message);
+        const message = error.name === 'TokenExpiredError'
+            ? 'Session expired, please log in again'
+            : 'Unauthorized: Invalid token';
+
+        return res.status(401).json({
+            success: false,
+            error: message
+        });
+    }
+
+    try {
+        const user = await User.findById(decoded.id);
         if (!user) {
+            console.log('Token invalid - user not found');
             return res.status(401).json({
                 success: false,
                 error: 'Unauthorized: Invalid token'
@@ -26,23 +43,11 @@ const authMiddleware = async (req, res, next) => {
         req.user = user;
         next();
     } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                error: 'Session expired, please log in again'
-            });
-        } else if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({
-                success: false,
-                error: 'Unauthorized: Invalid token'
-            });
-        } else {
-            console.error('Error during authentication:', error);
-            return res.status(401).json({
-                success: false,
-                error: 'Unauthorized'
-            });
-        }
+        console.error('Error in auth middleware:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'Internal Server Error'
+        });
     }
 };
 
