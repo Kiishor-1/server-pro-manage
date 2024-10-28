@@ -1,7 +1,7 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
 const moment = require('moment');
-const { startOfDay, endOfDay, startOfWeek, startOfMonth, endOfMonth } = require('../utils/dateUtils');
+const { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } = require('../utils/dateUtils');
 
 exports.getAllTasks = async (req, res) => {
     try {
@@ -13,12 +13,19 @@ exports.getAllTasks = async (req, res) => {
         let dateFilter = {};
 
         if (filter === 'today') {
-            dateFilter.createdAt = { $gte: startOfDay(), $lte: endOfDay() };
+            dateFilter.dueDate = { $gte: startOfDay(), $lte: endOfDay() };
         } else if (filter === 'week') {
-            dateFilter.createdAt = { $gte: startOfWeek(), $lte: endOfDay() };
+            dateFilter.dueDate = { $gte: startOfWeek(), $lte: endOfWeek() };
         } else if (filter === 'month') {
-            dateFilter.createdAt = { $gte: startOfMonth(), $lte: endOfDay() };
+            dateFilter.dueDate = { $gte: startOfMonth(), $lte: endOfMonth() };
         }
+        // if (filter === 'today') {
+        //     dateFilter.createdAt = { $gte: startOfDay(), $lte: endOfDay() };
+        // } else if (filter === 'week') {
+        //     dateFilter.createdAt = { $gte: startOfWeek(), $lte: endOfDay() };
+        // } else if (filter === 'month') {
+        //     dateFilter.createdAt = { $gte: startOfMonth(), $lte: endOfDay() };
+        // }
 
         const tasks = await Task.find({
             $or: [
