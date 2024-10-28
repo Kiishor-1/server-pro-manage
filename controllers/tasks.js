@@ -19,14 +19,6 @@ exports.getAllTasks = async (req, res) => {
         } else if (filter === 'month') {
             dateFilter.dueDate = { $gte: startOfMonth(), $lte: endOfMonth() };
         }
-        // if (filter === 'today') {
-        //     dateFilter.createdAt = { $gte: startOfDay(), $lte: endOfDay() };
-        // } else if (filter === 'week') {
-        //     dateFilter.createdAt = { $gte: startOfWeek(), $lte: endOfDay() };
-        // } else if (filter === 'month') {
-        //     dateFilter.createdAt = { $gte: startOfMonth(), $lte: endOfDay() };
-        // }
-
         const tasks = await Task.find({
             $or: [
                 { author: userId },
@@ -110,8 +102,9 @@ exports.createTask = async (req, res) => {
             author: authorId
         });
 
+
         if (date) {
-            newTask.dueDate = date;
+            newTask.dueDate = startOfDay(new Date(date))
         }
 
         if (assigneeEmail) {
@@ -148,12 +141,9 @@ exports.createTask = async (req, res) => {
 
 
 exports.updateTask = async (req, res) => {
-    console.log('object')
     try {
         const { id } = req.params;
-        console.log("id", id)
         const { title, priority, checkLists, date, assignee } = req.body;
-        console.log('reqbody', req.body)
 
         const task = await Task.findById(id);
         if (!task) {
@@ -162,12 +152,12 @@ exports.updateTask = async (req, res) => {
                 error: 'Task not found'
             });
         }
-        console.log('2')
         task.title = title;
         task.priority = priority;
         task.checkLists = checkLists;
-        task.dueDate = date;
-        console.log('2.1')
+        if (date) {
+            task.dueDate = startOfDay(new Date(date))
+        }
         if (assignee) {
             const newAssignee = await User.findOne({ email: assignee });
             if (!newAssignee) {
@@ -176,7 +166,6 @@ exports.updateTask = async (req, res) => {
                     error: 'Assignee not found'
                 });
             }
-            console.log('3')
 
             if (task.assignee) {
                 const previousAssignee = await User.findById(task.assignee);
@@ -193,6 +182,7 @@ exports.updateTask = async (req, res) => {
             task
         });
     } catch (error) {
+        console.log(error);
         return res.status(500).json({
             success: false,
             error: 'Error updating task'

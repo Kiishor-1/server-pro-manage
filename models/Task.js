@@ -36,7 +36,6 @@ const taskSchema = new mongoose.Schema({
     },
     dueDate: {
         type: Date,
-        // default: Date.now(),
     },
     assignee: {
         type: Schema.Types.ObjectId,
