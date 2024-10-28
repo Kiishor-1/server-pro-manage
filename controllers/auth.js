@@ -1,24 +1,11 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const passwordStrengthValidator = require('../utils/passwordStrength');
 
 exports.register = async (req, res) => {
     try {
         const { name, email, password, confirmPassword } = req.body;
-
-        if (!name || !email || !password || !confirmPassword) {
-            return res.status(403).send({
-                success: false,
-                error: "All Fields are required",
-            });
-        }
-
-        if (password !== confirmPassword) {
-            return res.status(403).send({
-                success: false,
-                error: "Passwords do not match",
-            });
-        }
 
         let existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -67,6 +54,15 @@ exports.login = async (req, res) => {
                 success: false,
                 error: `User is not found. Please signup`,
             })
+        }
+
+        try {
+            passwordStrengthValidator(password);
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                error: error.message,
+            });
         }
 
         if (await bcrypt.compare(password, user.password)) {
