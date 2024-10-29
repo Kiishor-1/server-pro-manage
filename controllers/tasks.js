@@ -49,7 +49,7 @@ exports.getTaskDetail = async (req, res) => {
         const { id } = req.params;
 
         console.log('id', id)
-        const userId = req.user._id;
+        // const userId = req.user._id;
 
         const task = await Task.findById(id).populate({
             path: 'assignee',
