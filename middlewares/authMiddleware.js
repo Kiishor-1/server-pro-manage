@@ -2,9 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const authMiddleware = async (req, res, next) => {
-    console.log(req.body);
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
         return res.status(401).json({
             success: false,
@@ -17,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
         decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
         if (res.headersSent) return;
-        
+
         console.error('JWT error:', error.message);
         const message = error.name === 'TokenExpiredError'
             ? 'Session expired, please log in again'
@@ -36,6 +35,13 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 error: 'Unauthorized: Invalid token'
+            });
+        }
+
+        if (user.tokenVersion !== decoded.tokenVersion) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized: Invalid token"
             });
         }
 

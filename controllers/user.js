@@ -8,7 +8,6 @@ exports.addPeople = async (req, res) => {
         const { email } = req.body;
 
         const newUser = await User.findOne({ email: email });
-        console.log(newUser);
         if (!newUser) {
             return res.status(404).json({
                 success: false,

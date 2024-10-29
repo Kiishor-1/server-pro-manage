@@ -3,11 +3,9 @@ const Task = require('../models/Task');
 module.exports.isAuthor = async (req, res, next) => {
     try {
         const { id } = req.params;
-        console.log('id',id)
         const user = req.user;
 
         if (!user || !user._id) {
-            console.log('error itthe')
             return res.status(401).json({
                 success: false,
                 error: 'Unauthorized: User not authenticated',
@@ -16,7 +14,6 @@ module.exports.isAuthor = async (req, res, next) => {
         const task = await Task.findById(id);
 
         if (!task) {
-            console.log('error itthe')
             return res.status(404).json({
                 success: false,
                 error: 'Task not found',

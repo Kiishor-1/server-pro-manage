@@ -48,15 +48,12 @@ exports.getTaskDetail = async (req, res) => {
     try {
         const { id } = req.params;
 
-        console.log('id', id)
         // const userId = req.user._id;
 
         const task = await Task.findById(id).populate({
             path: 'assignee',
             select: '-password'
         });
-
-        console.log(task)
 
         // const task = await Task.findOne({
         //     _id: id,
@@ -175,7 +172,6 @@ exports.updateTask = async (req, res) => {
             task.assignee = newAssignee._id;
         }
         await task.save();
-        console.log('4')
         return res.status(200).json({
             success: true,
             message: 'Task updated successfully',
@@ -202,16 +198,11 @@ exports.destroyTask = async (req, res) => {
                 error: 'Task not found'
             });
         }
-        console.log('check')
         const author = await User.findById(task.author);
         author.tasks.pull(task._id);
-        console.log('check')
         await author.save();
-        console.log('check')
-        // await task.remove();
         await Task.findByIdAndDelete(id);
 
-        console.log('check')
         return res.status(200).json({
             success: true,
             message: 'Task deleted successfully'
@@ -229,7 +220,6 @@ exports.updateCategory = async (req, res) => {
     const { id } = req.params;
     const { category } = req.body;
 
-    console.log("check0")
 
     const allowedCategories = ['Backlog', 'ToDo', 'InProgress', 'Done'];
 
@@ -240,19 +230,15 @@ exports.updateCategory = async (req, res) => {
                 error: 'Invalid category'
             });
         }
-        console.log("check1")
         const task = await Task.findById(id);
         if (!task) {
-            console.log('error itthe3')
             return res.status(404).json({
                 success: false,
                 error: 'Task not found'
             });
         }
-        console.log("check2")
         task.category = category;
         await task.save();
-        console.log("check3")
         return res.status(200).json({
             success: true,
             message: 'Category updated successfully',
@@ -270,7 +256,6 @@ exports.updateCategory = async (req, res) => {
 }
 
 exports.analytics = async (req, res) => {
-    console.log('received');
     const currentUserId = req.user._id;
     if (!currentUserId) {
         return res.status(403).json({

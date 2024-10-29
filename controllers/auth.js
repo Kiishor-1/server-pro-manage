@@ -67,7 +67,7 @@ exports.login = async (req, res) => {
 
         if (await bcrypt.compare(password, user.password)) {
             const token = jwt.sign(
-                { email: user.email, id: user._id },
+                { email: user.email, id: user._id ,tokenVersion: user?.tokenVersion },
                 process.env.JWT_SECRET,
                 {
                     expiresIn: "24h",
@@ -98,3 +98,22 @@ exports.login = async (req, res) => {
         })
     }
 }
+
+exports.logout = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        await User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
+
+        res.clearCookie("token").status(200).json({
+            success: true,
+            message: "User logged out successfully",
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            error: "Logout failure. Please try again.",
+        });
+    }
+};

@@ -21,7 +21,11 @@ const userSchema = new mongoose.Schema({
             type: Schema.Types.ObjectId,
             ref: "Task",
         }
-    ]
+    ],
+    tokenVersion: {
+        type: Number,
+        default: 0,
+    }
 })
 
 userSchema.post("findOneAndDelete", async (user) => {
