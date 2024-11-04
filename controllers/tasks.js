@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 const User = require('../models/User');
-const moment = require('moment');
+const mongoose = require('mongoose')
 const { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } = require('../utils/dateUtils');
 
 exports.getAllTasks = async (req, res) => {
@@ -50,6 +50,13 @@ exports.getTaskDetail = async (req, res) => {
 
         // const userId = req.user._id;
 
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid task ID format'
+            });
+        }
+
         const task = await Task.findById(id).populate({
             path: 'assignee',
             select: '-password'
@@ -67,7 +74,7 @@ exports.getTaskDetail = async (req, res) => {
         if (!task) {
             return res.status(404).json({
                 success: false,
-                error: 'Task not found or access denied'
+                error: 'No such task found'
             });
         }
 
